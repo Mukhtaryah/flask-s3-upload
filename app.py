@@ -1,11 +1,12 @@
-from flask import Flask, render_template_string
+from flask import Flask, request
 import boto3
-from botocore.client import Config
 import os
+from botocore.client import Config
+from datetime import datetime
 
 app = Flask(__name__)
 
-# AWS S3 client setup
+# Configure S3 client with environment variables
 s3 = boto3.client(
     's3',
     aws_access_key_id=os.environ.get('AWS_ACCESS_KEY_ID'),
@@ -15,60 +16,37 @@ s3 = boto3.client(
     config=Config(signature_version='s3v4')
 )
 
-# HTML template for the upload page
-HTML_TEMPLATE = """
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Upload CSV to S3</title>
-</head>
-<body>
-    <h2>Upload Your CSV File</h2>
-    <form action="{{ post_url }}" method="POST" enctype="multipart/form-data" onsubmit="alert('Upload initiated. If successful, you will see the file in the S3 bucket.');">
-        <input type="hidden" name="acl" value="{{ fields['acl'] }}">
-        <input type="hidden" name="Content-Type" value="{{ fields['Content-Type'] }}">
-        <input type="hidden" name="key" value="{{ fields['key'] }}">
-        <input type="hidden" name="x-amz-algorithm" value="{{ fields['x-amz-algorithm'] }}">
-        <input type="hidden" name="x-amz-credential" value="{{ fields['x-amz-credential'] }}">
-        <input type="hidden" name="x-amz-date" value="{{ fields['x-amz-date'] }}">
-        <input type="hidden" name="policy" value="{{ fields['policy'] }}">
-        <input type="hidden" name="x-amz-signature" value="{{ fields['x-amz-signature'] }}">
-        <input type="file" name="file" accept=".csv">
+@app.route('/', methods=['GET', 'POST'])
+def upload_file():
+    if request.method == 'POST':
+        file = request.files['file']
+        campaign_id = request.form['campaign_id']
+        if file and campaign_id:
+            # Add timestamp to filename to prevent overwriting
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            s3.upload_fileobj(file, 'your-dverse-wallet-uploads', f'wallet_addresses_{campaign_id}_{timestamp}.csv')
+            # Trigger script with campaign_id (script doesn't exist yet, we'll create it later)
+            os.system(f"python wallet_script.py {campaign_id}")
+            return "File uploaded successfully!"
+    return '''
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Upload Wallet Addresses</title>
+    </head>
+    <body>
+      <h1>Upload Wallet Addresses CSV</h1>
+      <form method="POST" enctype="multipart/form-data">
+        <label for="campaign_id">Campaign ID:</label>
+        <input type="text" name="campaign_id" placeholder="Enter Campaign ID (e.g., campaign_1)" required>
+        <br><br>
+        <label for="file">Select CSV File:</label>
+        <input type="file" name="file" accept=".csv" required>
+        <br><br>
         <input type="submit" value="Upload">
-    </form>
-    <p>The URL expires in 1 hour. Refresh the page to get a new URL if needed.</p>
-</body>
-</html>
-"""
-
-@app.route('/')
-def upload_page():
-    # Generate a pre-signed POST URL
-    bucket_name = 'your-dverse-wallet-uploads'
-    fields = {
-        "acl": "private",
-        "Content-Type": "text/csv",
-        "key": "client_upload_${filename}"  # Allows dynamic file names
-    }
-    conditions = [
-        {"acl": "private"},
-        {"Content-Type": "text/csv"},
-        ["starts-with", "$key", "client_upload_"]
-    ]
-
-    post_url_data = s3.generate_presigned_post(
-        Bucket=bucket_name,
-        Key='client_upload_${filename}',
-        Fields=fields,
-        Conditions=conditions,
-        ExpiresIn=3600  # 1 hour expiry
-    )
-
-    return render_template_string(
-        HTML_TEMPLATE,
-        post_url=post_url_data['url'],
-        fields=post_url_data['fields']
-    )
-
+      </form>
+    </body>
+    </html>
+    '''
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5001)
