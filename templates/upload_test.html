@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Upload to S3</title>
+</head>
+<body>
+    <h2>Test Upload Your CSV File</h2>
+    <form action="https://s3.eu-north-1.amazonaws.com/your-dverse-wallet-uploads" method="POST" enctype="multipart/form-data">
+        <input type="hidden" name="acl" value="private">
+        <input type="hidden" name="Content-Type" value="text/csv">
+        <input type="hidden" name="key" value="test_upload_${filename}">
+        <input type="hidden" name="x-amz-algorithm" value="AWS4-HMAC-SHA256">
+        <input type="hidden" name="x-amz-credential" value="AKIARPFCG7AZXD3CSW4I/20250508/eu-north-1/s3/aws4_request">
+        <input type="hidden" name="x-amz-date" value="20250508T173212Z">
+        <input type="hidden" name="policy" value="eyJleHBpcmF0aW9uIjogIjIwMjUtMDUtMDhUMTg6MzI6MTJaIiwgImNvbmRpdGlvbnMiOiBbeyJhY2wiOiAicHJpdmF0ZSJ9LCB7IkNvbnRlbnQtVHlwZSI6ICJ0ZXh0L2NzdiJ9LCBbInN0YXJ0cy13aXRoIiwgIiRrZXkiLCAidGVzdF91cGxvYWRfIl0sIHsiYnVja2V0IjogInlvdXItZHZlcnNlLXdhbGxldC11cGxvYWRzIn0sIFsic3RhcnRzLXdpdGgiLCAiJGtleSIsICJ0ZXN0X3VwbG9hZF8iXSwgeyJ4LWFtei1hbGdvcml0aG0iOiAiQVdTNC1ITUFDLVNIQTI1NiJ9LCB7IngtYW16LWNyZWRlbnRpYWwiOiAiQUtJQVJQRkNHN0FaWEQzQ1NXNEkvMjAyNTA1MDgvZXUtbm9ydGgtMS9zMy9hd3M0X3JlcXVlc3QifSwgeyJ4LWFtei1kYXRlIjogIjIwMjUwNTA4VDE3MzIxMloifV19">
+        <input type="hidden" name="x-amz-signature" value="63ad829effc2da9cd07beab444c01c150ba95e0f6f17709798e89e91cc51159e">
+        <input type="file" name="file" accept=".csv">
+        <input type="submit" value="Upload">
+    </form>
+    <p>This URL expires at 18:32 UTC on May 8, 2025 (1 hour after generation).</p>
+</body>
+</html>
